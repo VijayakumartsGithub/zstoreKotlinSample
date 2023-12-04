@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="150dp"
+    android:layout_margin="15dp"
+    android:background="@drawable/round_bk2">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="20dp"
+        android:text="HDFC Bank Credit Card\nFlat 10% cashback on No Cost EMI\nand many more benefits!"
+        android:textColor="@android:color/black"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:padding="20dp"
+        android:text="Upto $5000 Cashback!!"
+        android:textColor="@android:color/black"
+        android:textSize="18sp"
+        android:textStyle="bold">
+
+    </TextView>
+
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop='35dp'
+        android:layout_marginRight='-35dp'
+        android:src="@drawable/categories_shop_icon">
+
+    </ImageView>
+
+</RelativeLayout>
