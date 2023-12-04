@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
@@ -51,6 +52,8 @@ class MainActivity : AppCompatActivity() {
 
         filterFAB = binding.floatingActionButton
         searchView = binding.searchView
+        searchView.visibility = View.GONE
+        searchView.setQuery("", false)
 
         /*SET CATEGORIES CHIP*/
         viewModel.productDataItem.observe(this, Observer {
@@ -116,6 +119,9 @@ class MainActivity : AppCompatActivity() {
 
                                 /*FILTER RECYCLERVIEW*/
                                 viewModel.filterProductsByCategory(ProductDataItem.category)
+
+                                searchView.visibility = View.GONE
+                                searchView.setQuery("", false)
                             }
 
                             binding.categoryChips.addView(chip)
@@ -238,11 +244,17 @@ class MainActivity : AppCompatActivity() {
                             viewModel.filterProductsByCategory(selectedCategory)
 
                             selectedOfferValue = null
+
+                            searchView.visibility = View.GONE
+                            searchView.setQuery("", false)
                         }
 
                         binding.offerChips.addView(chip)
 
                         selectedOfferValue = OfferLayoutData.offerId
+
+                        searchView.visibility = if (selectedOfferValue != null) View.VISIBLE else View.GONE
+                        searchView.setQuery("", false)
                     }
                     linearLayout.addView(cardView)
                 }
