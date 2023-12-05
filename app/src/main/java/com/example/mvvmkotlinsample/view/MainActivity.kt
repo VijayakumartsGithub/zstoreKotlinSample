@@ -15,6 +15,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.mvvmkotlinsample.databinding.ActivityMainBinding
 import com.example.mvvmkotlinsample.model.data.OfferLayoutData
+import com.example.mvvmkotlinsample.model.data.SelectedOffer
 import com.example.mvvmkotlinsample.model.interfaces.RetrofitService
 import com.example.mvvmkotlinsample.model.repo.MainRepository
 import com.example.mvvmkotlinsample.view.adapters.MainAdapter
@@ -32,10 +33,10 @@ class MainActivity : AppCompatActivity() {
     val adapter = MainAdapter()
     private val addedCategories = mutableSetOf<String>()
     lateinit var filterFAB: FloatingActionButton
-    private var selectedCategoryValue: String? = null
+    private var selectedCategoryValue: MutableList<String> = mutableListOf()
+    private var selectedCategoriesOffers: MutableList<SelectedOffer> = mutableListOf()
     private var selectedOfferValue: String? = null
     private lateinit var searchView: SearchView
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,12 +62,21 @@ class MainActivity : AppCompatActivity() {
                 var isFirstChip = true
 
                 if (it.isNotEmpty()) {
-                    selectedCategoryValue = it[0].category
+                    selectedCategoryValue.add(it[0].category)
                     selectedOfferValue = null
+                    selectedCategoriesOffers.add(SelectedOffer(it[0].offerList, it[0].category))
+                    //SET OFFERS FOR FIRST CATEGORY
+                    /*SET OFFERS*/
+                    addCardView(selectedCategoriesOffers.toList(), selectedCategoryValue.toList())
+
+                    Log.d(TAG, "Total ProductDataItem: ${it.size}")
 
                     for (ProductDataItem in it) {
+
+                        Log.d(TAG, "ProductDataItem: ${ProductDataItem.category}: and its offers: ${ProductDataItem.offerList}")
+
                         if (!addedCategories.contains(ProductDataItem.category)) {
-                            Log.d(TAG, "categories: " + ProductDataItem.category)
+                            Log.d(TAG, "addedCategories: $addedCategories")
                             /*Chip*/
                             val chip = Chip(this)
                             chip.setTypeface(null, Typeface.BOLD)
@@ -89,39 +99,79 @@ class MainActivity : AppCompatActivity() {
                             chip.setChipStrokeColorResource(strokeColorResId)
 
                             chip.setOnClickListener {
-                                for (index in 0 until binding.categoryChips.childCount) {
+                                /*for (index in 0 until binding.categoryChips.childCount) {
                                     val child = binding.categoryChips.getChildAt(index)
                                     if (child is Chip) {
-                                        /*Chip Selection*/
+                                        *//*Chip Selection*//*
                                         child.isSelected = false
-                                        /*Chip BackgroundColor*/
+                                        *//*Chip BackgroundColor*//*
                                         child.setChipBackgroundColorResource(R.color.white)
-                                        /*Chip Stroke*/
+                                        *//*Chip Stroke*//*
                                         child.chipStrokeWidth = 1.0F
                                         child.setChipStrokeColorResource(R.color.red)
                                         child.setTextColor(ContextCompat.getColor(this, R.color.black))
                                     }
+                                }*/
+
+                                if (chip.isSelected) {
+                                    if (selectedCategoryValue.size > 1) {
+                                        /*Chip Selection*/
+                                        chip.isSelected = false
+                                        /*Chip BackgroundColor*/
+                                        chip.setChipBackgroundColorResource(R.color.white)
+                                        /*Chip Stroke*/
+                                        chip.chipStrokeWidth = 1.0F
+                                        chip.setChipStrokeColorResource(R.color.red)
+                                        chip.setTextColor(ContextCompat.getColor(this, R.color.black))
+
+                                        /*Update*/
+                                        selectedCategoryValue.remove(ProductDataItem.category)
+                                        selectedOfferValue = null
+
+                                        Log.d(TAG, "categorySelected: ${ProductDataItem.category}")
+
+                                        selectedCategoriesOffers.removeAll { selectedOffer ->
+                                            selectedOffer.category == ProductDataItem.category
+                                        }
+
+                                        Log.d(TAG, "While onTap Category - selectedCategoriesOffers: $selectedCategoriesOffers")
+
+                                        /*SET OFFERS*/
+                                        addCardView(selectedCategoriesOffers.toList(), selectedCategoryValue.toList())
+
+                                        /*FILTER RECYCLERVIEW*/
+                                        viewModel.filterProductsByCategory(selectedCategoryValue.toList())
+
+                                        searchView.visibility = View.GONE
+                                        searchView.setQuery("", false)
+                                    }
+                                } else {
+                                    /*Chip Selection*/
+                                    chip.isSelected = true
+                                    /*Chip BackgroundColor*/
+                                    chip.setChipBackgroundColorResource(R.color.orangeLight)
+                                    /*Chip Stroke*/
+                                    chip.chipStrokeWidth = 5.0F
+                                    chip.setChipStrokeColorResource(R.color.orange)
+                                    chip.setTextColor(ContextCompat.getColor(this, R.color.orange))
+                                    selectedCategoryValue.add(ProductDataItem.category)
+                                    selectedOfferValue = null
+
+                                    Log.d(TAG, "categorySelected: ${ProductDataItem.category}")
+
+                                    selectedCategoriesOffers.add(SelectedOffer(ProductDataItem.offerList, ProductDataItem.category))
+
+                                    Log.d(TAG, "While onTap Category - selectedCategoriesOffers: $selectedCategoriesOffers")
+
+                                    /*SET OFFERS*/
+                                    addCardView(selectedCategoriesOffers.toList(), selectedCategoryValue.toList())
+
+                                    /*FILTER RECYCLERVIEW*/
+                                    viewModel.filterProductsByCategory(selectedCategoryValue.toList())
+
+                                    searchView.visibility = View.GONE
+                                    searchView.setQuery("", false)
                                 }
-
-                                /*Chip Selection*/
-                                chip.isSelected = true
-                                /*Chip BackgroundColor*/
-                                chip.setChipBackgroundColorResource(R.color.orangeLight)
-                                /*Chip Stroke*/
-                                chip.chipStrokeWidth = 5.0F
-                                chip.setChipStrokeColorResource(R.color.orange)
-                                chip.setTextColor(ContextCompat.getColor(this, R.color.orange))
-                                selectedCategoryValue = ProductDataItem.category
-                                selectedOfferValue = null
-
-                                /*SET OFFERS*/
-                                addCardView(ProductDataItem.offerList, ProductDataItem.category)
-
-                                /*FILTER RECYCLERVIEW*/
-                                viewModel.filterProductsByCategory(ProductDataItem.category)
-
-                                searchView.visibility = View.GONE
-                                searchView.setQuery("", false)
                             }
 
                             binding.categoryChips.addView(chip)
@@ -131,12 +181,8 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    //SET OFFERS FOR FIRST CATEGORY
-                    /*SET OFFERS*/
-                    addCardView(it[0].offerList, it[0].category)
-
                     /*FILTER RECYCLERVIEW*/
-                    viewModel.filterProductsByCategory(it[0].category)
+                    viewModel.filterProductsByCategory(selectedCategoryValue.toList())
                 }
             }
         })
@@ -185,7 +231,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                if (!selectedCategoryValue.isNullOrBlank() && !selectedOfferValue.isNullOrBlank()) {
+                if (selectedCategoryValue.isNotEmpty() && !selectedOfferValue.isNullOrBlank()) {
                     viewModel.searchProductsByCategory(newText.orEmpty(), selectedCategoryValue, selectedOfferValue)
                 }
                 return true
@@ -193,7 +239,7 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun addCardView(offersList: List<String>, selectedCategory: String) {
+    private fun addCardView(selectedOfferList: List<SelectedOffer>, selectedCategories: List<String>) {
         val linearLayout: LinearLayout = binding.offerLayout
 
         val inflater = LayoutInflater.from(this)
@@ -201,22 +247,32 @@ class MainActivity : AppCompatActivity() {
         linearLayout.removeAllViews()
         binding.offerChips.removeAllViews()
 
+        val offersList: MutableList<String> = mutableListOf()
+
+        for (SelectedOffer in selectedOfferList) {
+            for (offerId in SelectedOffer.offerList) {
+                if (!offersList.contains(offerId)) {
+                    offersList.add(offerId)
+                }
+            }
+        }
+
         val offerLayoutDataList: List<OfferLayoutData> = listOf(
             OfferLayoutData(offerId = "Hdfc Bank Credit Card", layoutId = R.layout.offer_1),
             OfferLayoutData(offerId = "Big Billion Day Offer", layoutId = R.layout.offer_2),
             OfferLayoutData(offerId = "Great Indian Festival Offer", layoutId = R.layout.offer_3)
         )
 
-        Log.d(TAG, "SELECTED OFFER: Data $offersList")
+        Log.d(TAG, "SELECTED OFFERS: $offersList")
 
         for (OfferLayoutData in offerLayoutDataList) {
-            for (offer in offersList) {
+            for (offer in offersList.toList()) {
                 if (offer == OfferLayoutData.offerId) {
                     val cardView = inflater.inflate(OfferLayoutData.layoutId, linearLayout, false)
                     cardView.setOnClickListener {
                         /*FILTER RECYCLERVIEW*/
                         viewModel.filterProductsByCategoryAndOffer(
-                            selectedCategory,
+                            selectedCategories,
                             OfferLayoutData.offerId
                         )
 
@@ -241,8 +297,7 @@ class MainActivity : AppCompatActivity() {
                         chip.setOnCloseIconClickListener {
                             binding.offerChips.removeView(chip)
 
-                            viewModel.filterProductsByCategory(selectedCategory)
-
+                            viewModel.filterProductsByCategory(selectedCategories)
                             selectedOfferValue = null
 
                             searchView.visibility = View.GONE

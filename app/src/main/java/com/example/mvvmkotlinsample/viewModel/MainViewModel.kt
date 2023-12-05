@@ -18,7 +18,6 @@ class MainViewModel constructor(private val mainRepository: MainRepository) : Vi
     val errorMessage = MutableLiveData<String>()
     var productDataItem = MutableLiveData<ProductData>()
 
-
     fun getProducts() {
         val response = mainRepository.getAllProducts()
 
@@ -33,20 +32,29 @@ class MainViewModel constructor(private val mainRepository: MainRepository) : Vi
 
                     val productDataItemValue = ProductData()
 
-                    for (ProductDataItemValue in data) {
+                    val categoryOfferMap = HashMap<String, List<String>>()
 
-                        /*OFFERS LIST*/
-                        val offerListsData = listOf(
-                            "Hdfc Bank Credit Card",
-                            "Big Billion Day Offer",
-                            "Great Indian Festival Offer"
-                        )
-                        val startingIndexOffer =
-                            if (offerListsData.isNotEmpty()) Random.nextInt(offerListsData.size) else 0
-                        val selectedOffers = offerListsData.subList(
-                            startingIndexOffer,
-                            min(startingIndexOffer + offerListsData.size, offerListsData.size)
-                        )
+                    for (ProductDataItem in data) {
+
+                        val category = ProductDataItem.category
+
+                        if (!categoryOfferMap.containsKey(category)) {
+                            /*OFFERS LIST*/
+                            val offerListsData = listOf(
+                                "Hdfc Bank Credit Card",
+                                "Big Billion Day Offer",
+                                "Great Indian Festival Offer"
+                            )
+                            val startingIndexOffer =
+                                if (offerListsData.isNotEmpty()) Random.nextInt(offerListsData.size) else 0
+                            val selectedOffers = offerListsData.subList(
+                                startingIndexOffer,
+                                min(startingIndexOffer + offerListsData.size, offerListsData.size)
+                            )
+                            categoryOfferMap[category] = selectedOffers
+                        }
+
+                        val selectedOffers = categoryOfferMap[category] ?: emptyList()
 
                         /*COLORS LIST*/
                         val colorListsData =
@@ -59,13 +67,13 @@ class MainViewModel constructor(private val mainRepository: MainRepository) : Vi
                         )
 
                         val productDataItem = ProductDataItem(
-                            category = ProductDataItemValue.category,
-                            description = ProductDataItemValue.description,
-                            id = ProductDataItemValue.id,
-                            image = ProductDataItemValue.image,
-                            price = ProductDataItemValue.price,
-                            rating = ProductDataItemValue.rating,
-                            title = ProductDataItemValue.title,
+                            category = ProductDataItem.category,
+                            description = ProductDataItem.description,
+                            id = ProductDataItem.id,
+                            image = ProductDataItem.image,
+                            price = ProductDataItem.price,
+                            rating = ProductDataItem.rating,
+                            title = ProductDataItem.title,
                             offerList = selectedOffers,
                             colorsList = selectedColors,
                         )
@@ -84,48 +92,48 @@ class MainViewModel constructor(private val mainRepository: MainRepository) : Vi
         })
     }
 
-    fun filterProductsByCategory(category: String) {
+    fun filterProductsByCategory(categories: List<String>) {
         val products = productDataItem.value
 
         if (products != null) {
-            Log.d("FILTER1", "filterProductsByCategory: $category")
+            Log.d("FILTER1", "filterProductsByCategory: $categories")
 
-            val filteredList = products.filter { it.category == category }
+            val filteredList = products.filter { categories.contains(it.category) }
             val filteredData = ProductData()
             filteredData.addAll(filteredList)
             productDataItemFiltered.value = filteredData
         }
     }
 
-    fun filterProductsByCategoryAndOffer(category: String, offer: String) {
+    fun filterProductsByCategoryAndOffer(categories: List<String>, offer: String) {
         val products = productDataItem.value
 
         if (products != null) {
-            Log.d("FILTER2", "filterProductsByCategoryAndOffer: $category")
+            Log.d("FILTER2", "filterProductsByCategoryAndOffer: $categories")
 
             val filteredList =
-                products.filter { it.category == category && it.offerList.contains(offer) }
+                products.filter { categories.contains(it.category) && it.offerList.contains(offer) }
             val filteredData = ProductData()
             filteredData.addAll(filteredList)
             productDataItemFiltered.value = filteredData
         }
     }
 
-    fun sortProducts(sortType: String, selectedCategory: String?, selectedOffer: String?) {
+    fun sortProducts(sortType: String, categories: List<String>, selectedOffer: String?) {
         val products = productDataItem.value
 
         if (products != null) {
             Log.d(
                 "SORT",
-                "sortProducts type: $sortType, selectedCategory: $selectedCategory, selectedOffer: $selectedOffer"
+                "sortProducts type: $sortType, selectedCategory: $categories, selectedOffer: $selectedOffer"
             )
 
             val filteredList = when {
-                selectedCategory != null && selectedOffer == null ->
-                    products.filter { it.category == selectedCategory }
-                selectedCategory != null && selectedOffer != null ->
+                categories.isNotEmpty() && selectedOffer == null ->
+                    products.filter { categories.contains(it.category) }
+                categories.isNotEmpty() && selectedOffer != null ->
                     products.filter {
-                        it.category == selectedCategory && it.offerList.contains(
+                        categories.contains(it.category) && it.offerList.contains(
                             selectedOffer
                         )
                     }
@@ -134,7 +142,7 @@ class MainViewModel constructor(private val mainRepository: MainRepository) : Vi
             }
 
             val sortedList = when (sortType) {
-                "Rating" -> filteredList.sortedBy { it.rating.rate }
+                "Rating" -> filteredList.sortedByDescending { it.rating.rate }
                 "Price" -> filteredList.sortedBy { it.price }
                 else -> filteredList
             }
@@ -145,14 +153,14 @@ class MainViewModel constructor(private val mainRepository: MainRepository) : Vi
         }
     }
 
-    fun searchProductsByCategory(query: String, selectedCategory: String?, selectedOffer: String?) {
+    fun searchProductsByCategory(query: String, categories: List<String>, selectedOffer: String?) {
         val products = productDataItem.value
 
         if (products != null) {
             val filteredList = products.takeIf {
-                selectedCategory != null && selectedOffer != null
+                categories.isNotEmpty() && selectedOffer != null
             }?.filter {
-                it.category == selectedCategory && it.offerList.contains(selectedOffer)
+                categories.contains(it.category) && it.offerList.contains(selectedOffer)
             }
 
             val filteredQueryList = filteredList?.filter {
